@@ -1,0 +1,29 @@
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: serenity-jupyterlab-pv-volume
+  labels:
+    type: local
+    app: serenity-jupyterlab
+spec:
+  storageClassName: behemoth-read-sc
+  capacity:
+    storage: 50Gi
+  accessModes:
+    - ReadOnlyMany
+  hostPath:
+    path: "/mnt/raid/data/behemoth"
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: serenity-jupyterlab-pv-claim
+  labels:
+    app: serenity-jupyterlab
+spec:
+  storageClassName: behemoth-read-sc
+  accessModes:
+    - ReadOnlyMany
+  resources:
+    requests:
+      storage: 50Gi

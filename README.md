@@ -1,2 +1,0 @@
-# serenity
-Serenity trading system

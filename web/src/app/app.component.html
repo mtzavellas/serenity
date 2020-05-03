@@ -1,0 +1,37 @@
+<!-- Toolbar -->
+<mat-toolbar color="primary" class="header">
+  <div class="with-icon">
+    Serenity
+    <span class="nav-tool-items">
+      <mat-icon inline=true (click)="sidenav.toggle()" class="hamburger">menu</mat-icon>
+    </span>
+  </div>
+</mat-toolbar>
+
+<mat-sidenav-container>
+  <!-- Sidenav -->
+  <mat-sidenav #sidenav [mode]="isBiggerScreen() ? 'over' : 'side'" [(opened)]="opened" [fixedInViewport]="true"
+    [fixedTopGap]>
+    <mat-nav-list>
+      <a mat-list-item>
+        <mat-icon>dashboard</mat-icon> Dashboard
+      </a>
+      <a mat-list-item>
+        <mat-icon>person</mat-icon> User Profile
+      </a>
+    </mat-nav-list>
+  </mat-sidenav>
+
+  <!-- Main content -->
+  <mat-sidenav-content>
+    <!-- Angular material cards -->
+    <div class="productCards">
+      <mat-grid-list cols="4" rowHeight="500px">
+        <mat-grid-tile [colspan]="3" [rowspan]="1"></mat-grid-tile>
+        <mat-grid-tile [colspan]="1" [rowspan]="2"></mat-grid-tile>
+        <mat-grid-tile [colspan]="1" [rowspan]="1"></mat-grid-tile>
+        <mat-grid-tile [colspan]="2" [rowspan]="1"></mat-grid-tile>
+      </mat-grid-list>
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>

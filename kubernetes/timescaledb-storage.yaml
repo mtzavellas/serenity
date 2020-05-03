@@ -1,0 +1,29 @@
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: timescaledb-pv-volume
+  labels:
+    type: local
+    app: timescaledb
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 50Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/mnt/raid/data/timescaledb"
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: timescaledb-pv-claim
+  labels:
+    app: timescaledb
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 50Gi

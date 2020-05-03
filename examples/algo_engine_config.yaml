@@ -1,0 +1,21 @@
+api-version: v1Beta
+feedhandlers:
+  - exchange: Phemex
+  - exchange: CoinbasePro
+environment:
+  - key: FEED_INSTANCE
+    value-source: SYSTEM_ENV
+strategies:
+  - name: Alpha1
+    module-path: alpha1.py
+    environment:
+      - key: CONTRACT_TRADE_QTY
+        value: 1000
+      - key: BIG_PRINT_QTY
+        value: 10
+      - key: PHEMEX_INSTANCE
+        value-source: SYSTEM_ENV
+      - key: PHEMEX_API_KEY
+        value-source: SYSTEM_ENV
+      - key: PHEMEX_API_SECRET
+        value-source: SYSTEM_ENV

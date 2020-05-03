@@ -1,0 +1,9 @@
+include *.rst
+include *.txt
+include *.yml
+include Dockerfile
+include LICENSE
+include Makefile
+include tox.ini
+recursive-include capnp *.capnp
+recursive-exclude web *

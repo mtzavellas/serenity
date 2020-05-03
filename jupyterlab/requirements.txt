@@ -1,0 +1,14 @@
+cufflinks==0.17.3
+dask==2.14.0
+hmmlearn==0.2.3
+ipywidgets==7.5.1
+jupyterlab-git==0.10.0
+jupyterlab==1.2.9
+numpy==1.18.2
+pandas==1.0.3
+pytz==2019.3
+quandl==3.5.0
+serenity-trading==0.0.3
+scipy==1.4.1
+tables==3.6.1
+yfinance==0.1.54

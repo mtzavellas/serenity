@@ -1,8 +1,0 @@
-beakerx
-cufflinks
-dask
-pandas
-py4j
-quandl
-scipy
-tables

@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: serenity-jupyterlab
+  labels:
+    app: serenity-jupyterlab
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: serenity-jupyterlab
+  template:
+    metadata:
+      labels:
+        app: serenity-jupyterlab
+    spec:
+      containers:
+        - name: serenity-jupyterlab
+          image: cloudwallcapital/serenity-jupyterlab:2020.04.19-b22
+          ports:
+            - containerPort: 8888
+          volumeMounts:
+            - mountPath: /behemoth
+              name: behemoth-volume
+      volumes:
+        - name: behemoth-volume
+          persistentVolumeClaim:
+            claimName: serenity-jupyterlab-pv-claim
