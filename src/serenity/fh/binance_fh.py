@@ -1,4 +1,5 @@
 import json
+import logging
 
 import binance.client
 import fire
@@ -13,6 +14,9 @@ from serenity.model.marketdata import Trade
 
 
 class BinanceFeedHandler(WebsocketFeedHandler):
+
+    logger = logging.getLogger(__name__)
+
     def __init__(self, scheduler: NetworkScheduler, instrument_cache: InstrumentCache, instance_id: str = 'prod'):
         if instance_id == 'prod':
             self.ws_uri = 'wss://stream.binance.com:9443/stream'
@@ -66,8 +70,8 @@ class BinanceFeedHandler(WebsocketFeedHandler):
             # magic: inject the bare Signal into the graph so we can
             # fire events on it without any downstream connections
             # yet made
-            network.graph.add_node(self.instrument_trades[symbol])
-            network.graph.add_node(self.instrument_quotes[symbol])
+            network.attach(self.instrument_trades[symbol])
+            network.attach(self.instrument_quotes[symbol])
 
         messages = MutableSignal()
         json_messages = Map(network, messages, lambda x: json.loads(x))

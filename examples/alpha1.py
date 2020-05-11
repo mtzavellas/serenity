@@ -5,6 +5,7 @@ from typing import Set
 from phemex import PhemexConnection, AuthCredentials
 from phemex.order import Contract, Side, Trigger, Condition, ConditionalOrder
 from tau.core import Event, Network
+from tau.event import Do
 from tau.math import ExponentialMovingAverage
 from tau.signal import Filter, BufferWithTime, Map
 
@@ -34,28 +35,28 @@ class Alpha1Trader(Event):
             big_print = self.strategy.big_prints.get_value()
             self.strategy.logger.info(f'Big print in spot market: {big_print}')
 
-            # 5 minute bin volumes dropping below EMWA
-            emwa = self.strategy.emwa.get_value()
+            # 5 minute bin volumes dropping below EWMA
+            ewma = self.strategy.ewma.get_value()
             volume = self.strategy.volume.get_value()
-            if emwa < volume:
+            if self.strategy.volume.is_valid() and volume < ewma:
                 contract = Contract('BTCUSD')
                 if big_print.get_side().get_type_code() == 'Buy':
                     # enter short position with a stop-loss and a take-profit at +/- 5% last trade px
-                    self.logger.info(f'Going short, buy print of {big_print} BTC, EMWA={emwa}, volume={volume}')
+                    self.logger.info(f'Going short, buy print of {big_print} BTC, EWMA={ewma}, volume={volume}')
 
                     # create a market order for BTCUSD, "cross" (no leverage), sell / short
                     primary_order = self.order_factory.create_market_order(Side.SELL, self.strategy.trade_qty, contract)
 
-                    last_trade_px = self.strategy.futures_trades
-                    stop_loss_px = last_trade_px.get_price() * 1.05
-                    take_profit_px = last_trade_px.get_price() * 0.95
+                    last_trade_px = self.strategy.futures_trades.get_value()
+                    stop_loss_px = last_trade_px.get_price() * 1.005
+                    take_profit_px = last_trade_px.get_price() * 0.995
 
                     # create stop loss order
-                    stop_loss = self.order_factory.create_market_order(Side.Buy, self.strategy.trade_qty, contract)
-                    stop_loss_cond = ConditionalOrder(Condition.IF_TOUCHED, Trigger.LAST_PRICE, stop_loss_px, stop_loss)
+                    stop_loss = self.order_factory.create_market_order(Side.BUY, self.strategy.trade_qty, contract)
+                    stop_loss_cond = ConditionalOrder(Condition.STOP, Trigger.LAST_PRICE, stop_loss_px, stop_loss)
 
                     # create take profit order
-                    take_profit = self.order_factory.create_market_order(Side.Buy, self.strategy.trade_qty, contract)
+                    take_profit = self.order_factory.create_market_order(Side.BUY, self.strategy.trade_qty, contract)
                     take_profit_cond = ConditionalOrder(Condition.IF_TOUCHED, Trigger.LAST_PRICE, take_profit_px,
                                                         take_profit)
 
@@ -65,21 +66,21 @@ class Alpha1Trader(Event):
                     self.open_orders.append(self.order_placer.submit(take_profit_cond))
                 else:
                     # enter long position with a stop-loss and a take-profit at +/- 5% last trade px
-                    self.logger.info(f'Going long, sell print of {big_print} BTC, EMWA={emwa}, volume={volume}')
+                    self.logger.info(f'Going long, sell print of {big_print} BTC, EWMA={ewma}, volume={volume}')
 
                     # create a market order for BTCUSD, "cross" (no leverage), buy / long
                     primary_order = self.order_factory.create_market_order(Side.BUY, self.strategy.trade_qty, contract)
 
-                    last_trade_px = self.strategy.futures_trades
-                    stop_loss_px = last_trade_px.get_price() * 0.95
-                    take_profit_px = last_trade_px.get_price() * 1.05
+                    last_trade_px = self.strategy.futures_trades.get_value()
+                    stop_loss_px = last_trade_px.get_price() * 0.995
+                    take_profit_px = last_trade_px.get_price() * 1.005
 
                     # create stop loss order
-                    stop_loss = self.order_factory.create_market_order(Side.Sell, self.strategy.trade_qty, contract)
-                    stop_loss_cond = ConditionalOrder(Condition.IF_TOUCHED, Trigger.LAST_PRICE, stop_loss_px, stop_loss)
+                    stop_loss = self.order_factory.create_market_order(Side.SELL, self.strategy.trade_qty, contract)
+                    stop_loss_cond = ConditionalOrder(Condition.STOP, Trigger.LAST_PRICE, stop_loss_px, stop_loss)
 
                     # create take profit order
-                    take_profit = self.order_factory.create_market_order(Side.Sell, self.strategy.trade_qty, contract)
+                    take_profit = self.order_factory.create_market_order(Side.SELL, self.strategy.trade_qty, contract)
                     take_profit_cond = ConditionalOrder(Condition.IF_TOUCHED, Trigger.LAST_PRICE, take_profit_px,
                                                         take_profit)
 
@@ -113,7 +114,7 @@ class Alpha1(InvestmentStrategy):
         self.futures_trades = None
         self.ohlc_5min = None
         self.volume = None
-        self.emwa = None
+        self.ewma = None
         self.trader = None
 
     def get_instrument_universe(self) -> Set[ExchangeInstrument]:
@@ -128,6 +129,11 @@ class Alpha1(InvestmentStrategy):
 
         api_key = ctx.getenv('PHEMEX_API_KEY')
         api_secret = ctx.getenv('PHEMEX_API_SECRET')
+        if not api_key:
+            raise ValueError('missing PHEMEX_API_KEY')
+        if not api_secret:
+            raise ValueError('missing PHEMEX_API_SECRET')
+
         credentials = AuthCredentials(api_key, api_secret)
 
         exchange_instance = ctx.getenv('PHEMEX_INSTANCE', 'prod')
@@ -140,7 +146,7 @@ class Alpha1(InvestmentStrategy):
 
         self.logger.info(f'Connected to Phemex {exchange_instance} instance')
 
-        self.spot_feed = ctx.fh_registry.get_feed(f'coinbase:{exchange_instance}:BTC-USD')
+        self.spot_feed = ctx.fh_registry.get_feed(f'coinbasepro:{exchange_instance}:BTC-USD')
         self.futures_feed = ctx.fh_registry.get_feed(f'phemex:{exchange_instance}:BTCUSD')
 
         self.logger.info(f'Connected to spot & futures {exchange_instance} feeds')
@@ -148,28 +154,31 @@ class Alpha1(InvestmentStrategy):
         network = self.ctx.get_network()
 
         # scan the spot market for large trades
-        self.big_prints = Filter(network, self.spot_feed.get_trades(), lambda x: x.get_qty() >= big_print_qty)
+        spot_trades = self.spot_feed.get_trades()
+        Do(network, spot_trades, lambda: self.logger.info(f'Spot market trade: {spot_trades.get_value()}'))
+        self.big_prints = Filter(network, spot_trades, lambda x: x.get_qty() >= big_print_qty)
 
         # compute 5 minute bins for the futures market and extract the volume field
         self.futures_trades = self.futures_feed.get_trades()
-        buffer_5min = BufferWithTime(network, self.futures_trades, timedelta(seconds=5))
+        buffer_5min = BufferWithTime(network, self.futures_trades, timedelta(minutes=5))
         self.ohlc_5min = ComputeOHLC(network, buffer_5min)
+        Do(network, self.ohlc_5min, lambda: self.logger.info(f'OHLC[5min]: {self.ohlc_5min.get_value()}'))
         self.volume = Map(network, self.ohlc_5min, lambda x: x.volume)
 
         # track the exponentially weighted moving average of the futures volume
-        self.emwa = ExponentialMovingAverage(network, self.volume)
+        self.ewma = ExponentialMovingAverage(network, self.volume)
 
     def start(self):
         super().start()
 
         self.trader = Alpha1Trader(self.ctx.get_network(), self)
         self.ctx.get_network().connect(self.big_prints, self.trader)
-        self.ctx.get_network().connect(self.emwa, self.trader)
+        self.ctx.get_network().connect(self.ewma, self.trader)
 
     def stop(self):
         super().stop()
 
         self.trader.stop()
         self.ctx.get_network().disconnect(self.big_prints, self.trader)
-        self.ctx.get_network().disconnect(self.emwa, self.trader)
+        self.ctx.get_network().disconnect(self.ewma, self.trader)
         self.trader = None

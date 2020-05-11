@@ -125,7 +125,7 @@ class WebsocketFeedHandler(FeedHandler):
         self._load_instruments()
 
         self.state = MutableSignal(FeedHandlerState.INITIALIZING)
-        self.scheduler.get_network().graph.add_node(self.state)
+        self.scheduler.get_network().attach(self.state)
 
     def get_instance_id(self) -> str:
         return self.instance_id
@@ -174,6 +174,9 @@ class FeedHandlerRegistry:
 
     def __init__(self):
         self.fh_registry = {}
+
+    def get_feedhandlers(self) -> List[FeedHandler]:
+        return list(self.fh_registry.values())
 
     def get_feed(self, uri: str) -> Feed:
         """

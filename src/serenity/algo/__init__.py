@@ -1,12 +1,10 @@
 from abc import ABC, abstractmethod
-from collections import Set
 from enum import Enum, auto
 
 from tau.core import Signal, NetworkScheduler, Network
 
 from serenity.db import InstrumentCache, TypeCodeCache
 from serenity.fh.feedhandler import FeedHandlerRegistry
-from serenity.model.exchange import ExchangeInstrument
 
 
 class StrategyState(Enum):
@@ -16,7 +14,7 @@ class StrategyState(Enum):
     CANCELLED = auto()
 
 
-class StrategyContext(ABC):
+class StrategyContext:
     """
     Environment for a running strategy instance, provided by the engine.
     """
@@ -93,7 +91,7 @@ class Strategy(ABC):
 
 class InvestmentStrategy(Strategy):
     @abstractmethod
-    def get_instrument_universe(self) -> Set[ExchangeInstrument]:
+    def get_instrument_universe(self) -> set:
         """
         Gets the universe of exchange-traded instruments that this strategy trades.
         """

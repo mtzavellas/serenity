@@ -7,7 +7,8 @@ environment:
     value-source: SYSTEM_ENV
 strategies:
   - name: Alpha1
-    module-path: alpha1.py
+    module: alpha1
+    strategy-class: Alpha1
     environment:
       - key: CONTRACT_TRADE_QTY
         value: 1000

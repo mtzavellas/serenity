@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 from typing import List
 
 import fire
@@ -15,6 +16,8 @@ from serenity.model.marketdata import Trade
 
 
 class PhemexFeedHandler(WebsocketFeedHandler):
+
+    logger = logging.getLogger(__name__)
 
     def __init__(self, scheduler: NetworkScheduler, instrument_cache: InstrumentCache, instance_id: str = 'prod'):
         if instance_id == 'prod':
@@ -70,8 +73,8 @@ class PhemexFeedHandler(WebsocketFeedHandler):
             # magic: inject the bare Signal into the graph so we can
             # fire events on it without any downstream connections
             # yet made
-            network.graph.add_node(self.instrument_trades[symbol])
-            network.graph.add_node(self.instrument_quotes[symbol])
+            network.attach(self.instrument_trades[symbol])
+            network.attach(self.instrument_quotes[symbol])
 
             subscribe_msg = {
                 'id': 1,

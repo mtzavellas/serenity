@@ -3,10 +3,11 @@
 Release History
 ---------------
 
-0.2.0 (2020-05-02)
+0.2.0 (2020-05-03)
 ++++++++++++++++++
 
-- Started framing out algo engine API
+- Added basic strategy API with dummy example
+- Implemented runnable MVP version of algo engine
 - Supported extending mmap journal files on-the-fly
 - Improved Azure DevOps integration, including Python 3.7/3.8 cross-build
 - Upgraded to Tau 0.4.3

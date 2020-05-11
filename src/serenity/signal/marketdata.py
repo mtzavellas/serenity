@@ -13,6 +13,10 @@ class OHLC:
         self.close_px = close_px
         self.volume = volume
 
+    def __str__(self) -> str:
+        return f'open={self.open_px}; high={self.high_px}; low={self.low_px}; close={self.close_px}; ' \
+               f'volume={self.volume}'
+
 
 class ComputeOHLC(Function):
     def __init__(self, network: Network, trades: BufferWithTime):
@@ -25,10 +29,10 @@ class ComputeOHLC(Function):
             if len(trade_list) == 0:
                 return
 
-            open_px = trade_list[0]
+            open_px = trade_list[0].get_price()
             high_px = -float('inf')
             low_px = float('inf')
-            close_px = trade_list[-1]
+            close_px = trade_list[-1].get_price()
             qty = 0
             for trade in trade_list:
                 qty += trade.get_qty()
